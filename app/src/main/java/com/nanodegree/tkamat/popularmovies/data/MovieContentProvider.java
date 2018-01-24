@@ -27,6 +27,7 @@ public class MovieContentProvider extends ContentProvider {
 
     private static final int FAVOURITES = 100;
     private static final int FAVOURITES_WITH_ID = 101;
+    private static final int FAVOURITES_WITH_MOVIEID = 102;
 
     public final static UriMatcher sUriMatcher = buildUriMatcher();
 
@@ -35,6 +36,7 @@ public class MovieContentProvider extends ContentProvider {
 
         uriMatcher.addURI(CONTENT_AUTHORITY, PATH_FAVOURITES, FAVOURITES);
         uriMatcher.addURI(CONTENT_AUTHORITY, PATH_FAVOURITES + "/#", FAVOURITES_WITH_ID);
+        uriMatcher.addURI(CONTENT_AUTHORITY, PATH_FAVOURITES + "/*", FAVOURITES_WITH_MOVIEID);
 
         return uriMatcher;
     }

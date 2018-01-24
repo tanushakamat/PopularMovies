@@ -27,31 +27,22 @@ public class CustomMovieAdapter extends RecyclerView.Adapter<CustomMovieAdapter.
 
     ArrayList<String> data;
 
-  /*  public CustomMovieAdapter(Activity context,
-                      ArrayList<String> arrayList) {
-        super(context, R.layout.grid_item_movies, arrayList);
-        this.context = context;
+    public CustomMovieAdapter(CustomMovieAdapter.ListItemClickListener listItemClickListener, ArrayList<String> arrayList) {
+        this.mOnClickListener = listItemClickListener;
         this.data = arrayList;
-    }*/
-  public CustomMovieAdapter(CustomMovieAdapter.ListItemClickListener listItemClickListener, ArrayList<String> arrayList)
-  {
-      this.mOnClickListener = listItemClickListener;
-      this.data = arrayList;
-  }
+    }
 
     @Override
     public MoviesViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        Log.v(LOG_TAG, "reached here CustomMovieAdapter.onCreateViewHolder" );
+        //Log.v(LOG_TAG, "reached here CustomMovieAdapter.onCreateViewHolder");
 
         context = parent.getContext();
         int layoutIdForListItem = R.layout.grid_item_movies;
         boolean shouldAttachToParentImmediately = false;
 
         LayoutInflater layoutInflater = LayoutInflater.from(context);
-        View view = layoutInflater.inflate(layoutIdForListItem, parent , shouldAttachToParentImmediately);
+        View view = layoutInflater.inflate(layoutIdForListItem, parent, shouldAttachToParentImmediately);
         MoviesViewHolder moviesViewHolder = new MoviesViewHolder(view);
-
-
 
         return moviesViewHolder;
     }
@@ -59,16 +50,14 @@ public class CustomMovieAdapter extends RecyclerView.Adapter<CustomMovieAdapter.
     @Override
     public void onBindViewHolder(MoviesViewHolder moviesViewHolder, int position) {
 
-        Log.v(LOG_TAG, "reached here CustomMovieAdapter.onBindViewHolder, position = " + position + "data.get(position) = " + data.get(position) );
+        //Log.v(LOG_TAG, "reached here CustomMovieAdapter.onBindViewHolder, position = " + position + "data.get(position) = " + data.get(position));
 
         try {
             Picasso
                     .with(context)
                     .load(data.get(position))
                     .into((ImageView) moviesViewHolder.imageView);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -76,7 +65,7 @@ public class CustomMovieAdapter extends RecyclerView.Adapter<CustomMovieAdapter.
 
     @Override
     public int getItemCount() {
-        if(data == null)return 0;
+        if (data == null) return 0;
         else
             return data.size();
     }
@@ -86,42 +75,48 @@ public class CustomMovieAdapter extends RecyclerView.Adapter<CustomMovieAdapter.
         return data.get(position);
     }
 
-    public void clear()
-    {
-        if(data != null)
-        data.clear();
+    public void clear() {
+        if (data != null) {
+            Log.v(LOG_TAG, "Reached data.clear()");
+            data.clear();
+        }
     }
 
-    public void add(String posterPath)
-    {
+    public void add(String posterPath) {
         try {
             data.add(posterPath);
             notifyDataSetChanged();
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void setMovieData(String[] result)
-    {
-        Log.v(LOG_TAG, "reached here CustomMovieAdapter.setMovieData");
-        if(data!=null) {
-            for (String posterPath : result) {
-                String completePosterURL = IMAGEBASEURL + POSTERSIZE + posterPath;
-                data.add(completePosterURL);
+    public void setMovieData(String[] result) {
+        if (result != null) {
+            if (data != null) {
+                Log.v(LOG_TAG, "reached here CustomMovieAdapter.setMovieData + " + result.length);
+                for (String posterPath : result) {
+                    String completePosterURL = IMAGEBASEURL + POSTERSIZE + posterPath;
+                    data.add(completePosterURL);
+                }
+                notifyDataSetChanged();
+                //MovieFragment.recyclerViewScrollToPosition();
+
+                MovieFragment.restoreRecyclerViewState();
+
+
             }
+        } else if (result == null && data != null) {
+            data.clear();
             notifyDataSetChanged();
         }
     }
 
-    class MoviesViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
+    class MoviesViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         public ImageView imageView;
 
 
-        public  MoviesViewHolder(View itemView)
-        {
+        public MoviesViewHolder(View itemView) {
             super(itemView);
             imageView = (ImageView) itemView.findViewById(R.id.list_item_movies_imageview);
             itemView.setOnClickListener(this);
@@ -134,82 +129,8 @@ public class CustomMovieAdapter extends RecyclerView.Adapter<CustomMovieAdapter.
         }
     }
 
-    public interface ListItemClickListener
-    {
+    public interface ListItemClickListener {
         void onListItemClick(int clickedItemIndex);
     }
 
 }
-
-/*
-package com.nanodegree.tkamat.popularmovies;
-
-import android.app.Activity;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.ImageView;
-
-import com.squareup.picasso.Picasso;
-
-import java.util.ArrayList;
-/*
-public class CustomMovieAdapter extends ArrayAdapter {
-    private final Activity context;
-    private final String LOG_TAG = CustomMovieAdapter.class.getSimpleName();
-*/
-/*    ArrayList<String> data;
-
-    public CustomMovieAdapter(Activity context,
-                              ArrayList<String> arrayList) {
-        super(context, R.layout.grid_item_movies, arrayList);
-        this.context = context;
-        this.data = arrayList;
-    }
-
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        if (null == convertView) {
-            LayoutInflater inflater = ((Activity)context).getLayoutInflater();
-            convertView = inflater.inflate(R.layout.grid_item_movies, parent, false);
-        }
-
-        ImageView imageView = (ImageView) convertView.findViewById(R.id.list_item_movies_imageview);
-
-
-        try {
-            Picasso
-                    .with(context)
-                    .load(data.get(position))
-                    .into((ImageView) imageView);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-        return convertView;
-    }
-
-    public void add(String posterPath)
-    {
-        try {
-            data.add(posterPath);
-            notifyDataSetChanged();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void clear()
-    {
-        data.clear();
-    }
-
-}
-
- */

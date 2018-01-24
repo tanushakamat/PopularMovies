@@ -23,11 +23,7 @@
         </activity>
         <activity
             android:name=".DetailActivity"
-            android:label="@string/title_activity_detail"
-            android:parentActivityName=".MainActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.nanodegree.tkamat.popularmovies.MainActivity" />
+            android:label="@string/title_activity_detail">
         </activity>
         <activity
             android:name=".SettingsActivity"

@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.nanodegree.tkamat.popularmovies.DetailActivityFragment;
 import com.nanodegree.tkamat.popularmovies.R;
 import com.squareup.picasso.Picasso;
 
@@ -24,6 +25,8 @@ public class TrailersAdapter extends RecyclerView.Adapter<TrailersAdapter.Traile
     private static final String YOUTUBETHUMBNAILEND = "/0.jpg";
     private static final String YOUTUBELINKSTART = "https://www.youtube.com/watch?v=";
     private static ListItemClickListener mOnClickListener;
+
+    public static boolean isTrailerDataSet;
 
     public TrailersAdapter(ListItemClickListener listener)
     {
@@ -74,6 +77,7 @@ public class TrailersAdapter extends RecyclerView.Adapter<TrailersAdapter.Traile
     {
         mTrailerData = trailerLinks;
         Log.v(LOG_TAG, "reached here TrailersAdapter.setTrailerData" );
+        DetailActivityFragment.restoreScrollPosition();
         notifyDataSetChanged();
 
     }

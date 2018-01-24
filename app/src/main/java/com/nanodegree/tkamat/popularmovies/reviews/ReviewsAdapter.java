@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.nanodegree.tkamat.popularmovies.DetailActivityFragment;
 import com.nanodegree.tkamat.popularmovies.R;
 
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ReviewsV
     private ArrayList<ReviewData> mReviewData;
     Context context;
     private static ListItemClickListener mOnClickListener;
+    public static boolean isReviewDataSet;
 
     public ReviewsAdapter(ListItemClickListener listener)
     {
@@ -57,6 +59,7 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ReviewsV
     {
         mReviewData = reviewData;
         Log.v(LOG_TAG, "reached here ReviewsAdapter.setReviewData, reviewData.length = " + reviewData.size() );
+        DetailActivityFragment.restoreScrollPosition();
         notifyDataSetChanged();
 
     }

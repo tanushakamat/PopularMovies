@@ -1,11 +1,11 @@
-package com.nanodegree.tkamat.popularmovies;
+package com.nanodegree.tkamat.popularmovies.trailers;
 
 import android.app.Activity;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.nanodegree.tkamat.popularmovies.trailers.TrailersAdapter;
+import com.nanodegree.tkamat.popularmovies.BuildConfig;
 
 import org.json.JSONArray;
 import org.json.JSONException;

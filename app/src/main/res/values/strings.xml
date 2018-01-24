@@ -10,7 +10,9 @@
     <string name="string_rating_entry">Rating</string>
     <string name="string_popularity_value">popular</string>
     <string name="string_rating_value">top_rated</string>
-    <string name="title_activity_settings">SettingsActivity</string>
+    <string name="string_favourites_entry">Favourites</string>
+    <string name="string_favourites_value">favourites</string>
+    <string name="title_activity_settings">Settings</string>
 
     <!-- Intent -->
     <string name="string_original_title">original_title</string>
@@ -19,7 +21,6 @@
     <string name="string_overview">overview</string>
     <string name="string_poster_path">poster_path</string>
 
-    poster_path
 
 
 </resources>

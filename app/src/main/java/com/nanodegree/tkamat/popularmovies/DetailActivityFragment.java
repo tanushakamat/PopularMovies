@@ -1,9 +1,12 @@
 package com.nanodegree.tkamat.popularmovies;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -13,7 +16,6 @@ import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.method.ScrollingMovementMethod;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,6 +40,8 @@ public class DetailActivityFragment extends Fragment implements TrailersAdapter.
     private FetchTrailersTask fetchTrailersTask;
     private FetchReviewsTask fetchReviewsTask;
 
+    private static View rootView;
+
     String completePosterPath;
     String originalTitle;
     String releaseDate;
@@ -57,6 +61,8 @@ public class DetailActivityFragment extends Fragment implements TrailersAdapter.
     private final static String VOTE_AVERAGE_KEY = "voteAverageKey";
     private final static String OVERVIEW_KEY = "overviewKey";
 
+    private static int[] scrollPosition;
+
     public String mMovieId;
     final String LOG_TAG = DetailActivityFragment.class.getSimpleName();
 
@@ -70,13 +76,12 @@ public class DetailActivityFragment extends Fragment implements TrailersAdapter.
         // Check whether we're recreating a previously destroyed instance
         if (savedInstanceState != null) {
             // Restore value of members from saved state
-            //mCurrentScore = savedInstanceState.getInt(STATE_SCORE);
-            //mCurrentLevel = savedInstanceState.getInt(STATE_LEVEL);
             completePosterPath = savedInstanceState.getString(COMPLETE_POSTER_PATH_KEY);
             originalTitle = savedInstanceState.getString(ORIGINAL_TITLE_KEY);
             releaseDate = savedInstanceState.getString(RELEASE_DATE_KEY);
             voteAverage = savedInstanceState.getString(VOTE_AVERAGE_KEY);
             overview = savedInstanceState.getString(OVERVIEW_KEY);
+
         }
     }
 
@@ -88,27 +93,18 @@ public class DetailActivityFragment extends Fragment implements TrailersAdapter.
         outState.putString(VOTE_AVERAGE_KEY, voteAverage);
         outState.putString(OVERVIEW_KEY, overview);
 
+        //outState.putInt(SCROLL_POSITION_KEY, getScrollXY());
+        outState.putIntArray("ARTICLE_SCROLL_POSITION",
+                new int[]{rootView.getScrollX(), rootView.getScrollY()});
+
         // call superclass to save any view hierarchy
         super.onSaveInstanceState(outState);
     }
 
-    /*
-    public void onRestoreInstanceState(Bundle savedInstanceState) {
-        // Always call the superclass so it can restore the view hierarchy
-        super.onRestoreInstanceState(savedInstanceState);
-
-
-        // Restore state members from saved instance
-        mCurrentScore = savedInstanceState.getInt(STATE_SCORE);
-        mCurrentLevel = savedInstanceState.getInt(STATE_LEVEL);
-    }*/
-
-
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView =  inflater.inflate(R.layout.fragment_detail, container, false);
+        rootView = inflater.inflate(R.layout.fragment_detail, container, false);
 
         mTrailersRecyclerView = (RecyclerView) rootView.findViewById(R.id.rv_trailers);
         mTrailersRecyclerView.setHasFixedSize(true);
@@ -140,22 +136,15 @@ public class DetailActivityFragment extends Fragment implements TrailersAdapter.
         );
         mReviewsRecyclerView.addItemDecoration(mReviewDividerItemDecoration);
 
-        Log.v(LOG_TAG, "Reached here: DetailActivityFragment.onCreateView");
+        //Log.v(LOG_TAG, "Reached here: DetailActivityFragment.onCreateView");
 
         String poster_path = getString(R.string.string_poster_path);
         Intent intent = getActivity().getIntent();
-        if(intent!=null && intent.hasExtra(poster_path))
-        {
+        if (intent != null && intent.hasExtra(poster_path)) {
             completePosterPath = intent.getStringExtra(poster_path);
-            /*originalTitle = intent.getStringExtra(getString(R.string.string_original_title));
-            releaseDate = intent.getStringExtra(getString(R.string.string_release_date));
-            voteAverage = intent.getStringExtra(getString(R.string.string_vote_average));
-            overview = intent.getStringExtra(getString(R.string.string_overview));
-            mMovieId = intent.getStringExtra("id");*/
 
             movieData = intent.getParcelableExtra("movie_data");
-            if(movieData!=null)
-            {
+            if (movieData != null) {
                 originalTitle = movieData.originalTitle;
                 releaseDate = movieData.releaseDate;
                 voteAverage = movieData.voteAverage;
@@ -163,13 +152,13 @@ public class DetailActivityFragment extends Fragment implements TrailersAdapter.
                 mMovieId = movieData.id;
             }
 
-            Log.v(LOG_TAG, "mMovieId in DAF = " + mMovieId);
+            //Log.v(LOG_TAG, "mMovieId in DAF = " + mMovieId);
 
             updateTrailers();
             updateReviews();
 
 
-                    ImageView imageView = (ImageView) rootView.findViewById(R.id.poster_thumbnail);
+            ImageView imageView = (ImageView) rootView.findViewById(R.id.poster_thumbnail);
             Picasso.with(getActivity()).load(completePosterPath).into((ImageView) imageView);
 
             TextView textView_overview = (TextView) rootView.findViewById(R.id.movie_overview);
@@ -187,81 +176,108 @@ public class DetailActivityFragment extends Fragment implements TrailersAdapter.
         }
 
         final ToggleButton toggleButton;
+        final Drawable favStarIcon = ContextCompat.getDrawable(getActivity().getApplicationContext(), R.drawable.favorite_icon);
+
+        final Drawable favStarIconRed = ContextCompat.getDrawable(getActivity().getApplicationContext(), R.drawable.favorite_icon_red);
+        favStarIconRed.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP);
+
         toggleButton = (ToggleButton) rootView.findViewById(R.id.myToggleButton);
-        toggleButton.setChecked(false);
-        toggleButton.setBackgroundDrawable(ContextCompat.getDrawable(getActivity().getApplicationContext(), R.drawable.favorite_icon));
-        final Drawable favStarIconRed = getActivity().getApplicationContext().getResources().getDrawable(R.drawable.favorite_icon_red);
+        if (MovieFragment.favouriteMovieIds.contains(mMovieId)) {
+            toggleButton.setChecked(true);
+            toggleButton.setBackgroundDrawable(favStarIconRed);
+
+        } else {
+            toggleButton.setChecked(false);
+            toggleButton.setBackgroundDrawable(favStarIcon);
+        }
 
         toggleButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    toggleButton.setBackgroundDrawable(ContextCompat.getDrawable(getActivity().getApplicationContext(), R.drawable.favorite_icon));
-                    //buttonView.setBackgroundColor(Color.GREEN);
-                    addToFavourites(mMovieId);
-                }
-                else {
-                    favStarIconRed.setColorFilter(0xffff0000, PorterDuff.Mode.SRC_ATOP);
+                    favStarIconRed.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP);
                     toggleButton.setBackgroundDrawable(ContextCompat.getDrawable(getActivity().getApplicationContext(), R.drawable.favorite_icon_red));
+                    addToFavourites(mMovieId);
+                } else {
+                    toggleButton.setBackgroundDrawable(ContextCompat.getDrawable(getActivity().getApplicationContext(), R.drawable.favorite_icon));
                     deleteFromFavourites(mMovieId);
                 }
             }
         });
 
+        if(savedInstanceState!=null) {
+            /*final int[] */scrollPosition = savedInstanceState.getIntArray("ARTICLE_SCROLL_POSITION");
+        }
+
         return rootView;
     }
 
-    void updateTrailers()
+    public static void  restoreScrollPosition()
     {
-        fetchTrailersTask = new FetchTrailersTask(mTrailerAdapter, getActivity());
-        fetchTrailersTask.execute(mMovieId);
+        if (scrollPosition != null && rootView != null)
+            rootView.post(new Runnable() {
+                public void run() {
+                    //Log.v(LOG_TAG, "Reaching near scrollto, position[0] = " + scrollPosition[0] + " position[1] = " + scrollPosition[1]);
+                    rootView.scrollTo(scrollPosition[0], scrollPosition[1]);
+                }
+            });
     }
 
-    void updateReviews()
-    {
-        fetchReviewsTask = new FetchReviewsTask(mReviewAdapter, getActivity());
-        fetchReviewsTask.execute(mMovieId);
+    public boolean isOnline() {
+        ConnectivityManager cm =
+                (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        return cm.getActiveNetworkInfo() != null &&
+                cm.getActiveNetworkInfo().isConnectedOrConnecting();
     }
 
-    void addToFavourites(String movieId)
-    {
+    void updateTrailers() {
+        if (isOnline()) {
+            fetchTrailersTask = new FetchTrailersTask(mTrailerAdapter, getActivity());
+            fetchTrailersTask.execute(mMovieId);
+        } else {
+            CharSequence text = "Unable to load, due to unavailability in network.";
+            Toast.makeText(getActivity().getApplicationContext(), text, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    void updateReviews() {
+        if (isOnline()) {
+            fetchReviewsTask = new FetchReviewsTask(mReviewAdapter, getActivity());
+            fetchReviewsTask.execute(mMovieId);
+        } else {
+            CharSequence text = "Unable to load, due to unavailability in network.";
+            Toast.makeText(getActivity().getApplicationContext(), text, Toast.LENGTH_SHORT).show();
+        }
+
+    }
+
+    void addToFavourites(String movieId) {
         ContentValues values = new ContentValues();
         values.put(MovieContract.MovieEntry.COLUMN_MOVIEID, movieId);
 
         Uri uri = getContext().getContentResolver().insert(MovieContract.MovieEntry.CONTENT_URI, values);
-
-        if(uri!=null)
-        {
-            Toast.makeText(getContext(), uri.toString(), Toast.LENGTH_LONG).show();
-        }
-        //getActivity().finish();
     }
 
-    void deleteFromFavourites(String movieId)
-    {
+    void deleteFromFavourites(String movieId) {
         Uri deleteUri = MovieContract.MovieEntry.CONTENT_URI;
-        deleteUri.buildUpon().appendPath(movieId).build();
+        deleteUri = deleteUri.buildUpon().appendPath(movieId).build();
         int rowsDeleted = getContext().getContentResolver().delete(deleteUri, null, null);
 
         ContentValues values = new ContentValues();
         values.put(MovieContract.MovieEntry.COLUMN_MOVIEID, movieId);
+        //Toast.makeText(getContext(), rowsDeleted + " " + deleteUri.toString() , Toast.LENGTH_LONG).show();
 
-        Toast.makeText(getContext(), rowsDeleted + " " + deleteUri.toString() , Toast.LENGTH_LONG).show();
-        //getActivity().finish();
     }
 
 
-    public void onStart()
-    {
+    public void onStart() {
         super.onStart();
-    //    if(mMovieId!=null) {
-            updateTrailers();
-            updateReviews();
-      //  }
+        updateTrailers();
+        updateReviews();
     }
 
-    public void onResume()
-    {
+    public void onResume() {
         super.onResume();
         updateTrailers();
         updateReviews();
@@ -270,21 +286,14 @@ public class DetailActivityFragment extends Fragment implements TrailersAdapter.
 
     @Override
     public void onListItemClick(int clickedItemIndex, String trailerYoutubeLink) {
-        Log.v(LOG_TAG, "Reached in DetailActivityFragment.onListItemClick");
+        //Log.v(LOG_TAG, "Reached in DetailActivityFragment.onListItemClick");
 
-        //try {
-            Uri uri = Uri.parse(trailerYoutubeLink);
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setData(uri);
-            if (intent.resolveActivity(getContext().getPackageManager()) != null) {
-                startActivity(intent);
-            }
-        /*} catch (Exception e)
-        {
-            e.printStackTrace();
-        }*/
-
-
+        Uri uri = Uri.parse(trailerYoutubeLink);
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(uri);
+        if (intent.resolveActivity(getContext().getPackageManager()) != null) {
+            startActivity(intent);
+        }
     }
 
     @Override
