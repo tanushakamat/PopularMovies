@@ -9,7 +9,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.nanodegree.tkamat.popularmovies.DetailActivityFragment;
 import com.nanodegree.tkamat.popularmovies.R;
 import com.squareup.picasso.Picasso;
 
@@ -77,7 +76,7 @@ public class TrailersAdapter extends RecyclerView.Adapter<TrailersAdapter.Traile
     {
         mTrailerData = trailerLinks;
         Log.v(LOG_TAG, "reached here TrailersAdapter.setTrailerData" );
-        DetailActivityFragment.restoreScrollPosition();
+        //DetailActivityFragment.restoreScrollPosition();
         notifyDataSetChanged();
 
     }

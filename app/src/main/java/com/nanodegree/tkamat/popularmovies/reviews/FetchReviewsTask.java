@@ -35,6 +35,8 @@ public class FetchReviewsTask extends AsyncTask<String, Void, ArrayList<ReviewDa
 
 
 
+
+
     public FetchReviewsTask(ReviewsAdapter reviewsAdapter, Activity context)
     {
         this.mReviewsAdapter = reviewsAdapter;
@@ -62,6 +64,7 @@ public class FetchReviewsTask extends AsyncTask<String, Void, ArrayList<ReviewDa
             String sortingOrder = sharedPref.getString(context.getString(R.string.key_sort_order), popularityValue);*/
             String movieID = parameters[0];
             Log.v(LOG_TAG, "movieID = " + movieID);
+
 
             final String TMDBBASEURL = "http://api.themoviedb.org/3/movie/" + movieID + "/reviews?";
 

@@ -3,12 +3,14 @@ package com.nanodegree.tkamat.popularmovies;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
@@ -19,6 +21,7 @@ import android.text.method.ScrollingMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -54,17 +57,28 @@ public class DetailActivityFragment extends Fragment implements TrailersAdapter.
     RecyclerView mReviewsRecyclerView;
     TrailersAdapter mTrailerAdapter;
     ReviewsAdapter mReviewAdapter;
+    LinearLayoutManager trailersLayoutManager;
+    LinearLayoutManager reviewsLayoutManager;
 
     private final static String COMPLETE_POSTER_PATH_KEY = "completePosterPathKey";
     private final static String ORIGINAL_TITLE_KEY = "originalTitleKey";
     private final static String RELEASE_DATE_KEY = "releaseDateKey";
     private final static String VOTE_AVERAGE_KEY = "voteAverageKey";
     private final static String OVERVIEW_KEY = "overviewKey";
+    private final static String REVIEWS_POSIITION_KEY = "reviewsPositionKey";
 
-    private static int[] scrollPosition;
+    private final static String TRAILERS_SAVED_LAYOUT_MANAGER = "trailersSavedLayoutManager";
+    private final static String REVIEWS_SAVED_LAYOUT_MANAGER = "reviewsSavedLayoutManager";
+
+    private int[] scrollPosition;
+
+    private int reviewsScrollPosition;
 
     public String mMovieId;
     final String LOG_TAG = DetailActivityFragment.class.getSimpleName();
+
+    public  Parcelable trailersLayoutManagerSavedState;
+    public  Parcelable reviewsLayoutManagerSavedState;
 
     public DetailActivityFragment() {
     }
@@ -81,6 +95,10 @@ public class DetailActivityFragment extends Fragment implements TrailersAdapter.
             releaseDate = savedInstanceState.getString(RELEASE_DATE_KEY);
             voteAverage = savedInstanceState.getString(VOTE_AVERAGE_KEY);
             overview = savedInstanceState.getString(OVERVIEW_KEY);
+            reviewsScrollPosition = savedInstanceState.getInt(REVIEWS_POSIITION_KEY);
+
+            trailersLayoutManagerSavedState = ((Bundle) savedInstanceState).getParcelable(TRAILERS_SAVED_LAYOUT_MANAGER);
+            reviewsLayoutManagerSavedState = ((Bundle) savedInstanceState).getParcelable(REVIEWS_SAVED_LAYOUT_MANAGER);
 
         }
     }
@@ -97,6 +115,11 @@ public class DetailActivityFragment extends Fragment implements TrailersAdapter.
         outState.putIntArray("ARTICLE_SCROLL_POSITION",
                 new int[]{rootView.getScrollX(), rootView.getScrollY()});
 
+        outState.putInt(REVIEWS_POSIITION_KEY, reviewsLayoutManager.findFirstVisibleItemPosition());
+
+        outState.putParcelable(TRAILERS_SAVED_LAYOUT_MANAGER, mTrailersRecyclerView.getLayoutManager().onSaveInstanceState());
+        outState.putParcelable(REVIEWS_SAVED_LAYOUT_MANAGER, mReviewsRecyclerView.getLayoutManager().onSaveInstanceState());
+
         // call superclass to save any view hierarchy
         super.onSaveInstanceState(outState);
     }
@@ -109,11 +132,32 @@ public class DetailActivityFragment extends Fragment implements TrailersAdapter.
         mTrailersRecyclerView = (RecyclerView) rootView.findViewById(R.id.rv_trailers);
         mTrailersRecyclerView.setHasFixedSize(true);
 
-        LinearLayoutManager trailersLayoutManager = new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false);
+        trailersLayoutManager = new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false);
         mTrailersRecyclerView.setLayoutManager(trailersLayoutManager);
+
 
         mTrailerAdapter = new TrailersAdapter(this);
         mTrailersRecyclerView.setAdapter(mTrailerAdapter);
+
+        mTrailersRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener()
+        {
+            @Override
+            public void onGlobalLayout()
+            {
+                restoreScrollPosition();
+                //Log.v(LOG_TAG, "reviewsScrollPosition = " + reviewsScrollPosition);
+                //mReviewsRecyclerView.smoothScrollToPosition(reviewsScrollPosition);
+/*
+                if (trailersLayoutManagerSavedState != null) {
+                    mTrailersRecyclerView.getLayoutManager().onRestoreInstanceState(reviewsLayoutManagerSavedState);
+                }
+
+                if (reviewsLayoutManagerSavedState != null) {
+                    mReviewsRecyclerView.getLayoutManager().onRestoreInstanceState(trailersLayoutManagerSavedState);
+                }*/
+
+            }
+        });
 
         DividerItemDecoration mTrailerDividerItemDecoration = new DividerItemDecoration(
                 mTrailersRecyclerView.getContext(),
@@ -124,11 +168,21 @@ public class DetailActivityFragment extends Fragment implements TrailersAdapter.
         mReviewsRecyclerView = (RecyclerView) rootView.findViewById(R.id.rv_reviews);
         mReviewsRecyclerView.setHasFixedSize(true);
 
-        LinearLayoutManager reviewsLayoutManager = new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false);
+        reviewsLayoutManager = new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false);
         mReviewsRecyclerView.setLayoutManager(reviewsLayoutManager);
 
         mReviewAdapter = new ReviewsAdapter(this);
         mReviewsRecyclerView.setAdapter(mReviewAdapter);
+
+        mReviewsRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener()
+        {
+            @Override
+            public void onGlobalLayout()
+            {
+                //progressDialog.dismiss();
+                //restoreScrollPosition();
+            }
+        });
 
         DividerItemDecoration mReviewDividerItemDecoration = new DividerItemDecoration(
                 mReviewsRecyclerView.getContext(),
@@ -212,15 +266,19 @@ public class DetailActivityFragment extends Fragment implements TrailersAdapter.
         return rootView;
     }
 
-    public static void  restoreScrollPosition()
+    public  void  restoreScrollPosition()
     {
-        if (scrollPosition != null && rootView != null)
+        if (scrollPosition!=null && rootView != null)
             rootView.post(new Runnable() {
                 public void run() {
                     //Log.v(LOG_TAG, "Reaching near scrollto, position[0] = " + scrollPosition[0] + " position[1] = " + scrollPosition[1]);
-                    rootView.scrollTo(scrollPosition[0], scrollPosition[1]);
+                    rootView.scrollTo(scrollPosition[0], scrollPosition[1]+ getScreenWidth()/4);
                 }
             });
+    }
+
+    public static int getScreenWidth() {
+        return Resources.getSystem().getDisplayMetrics().widthPixels;
     }
 
     public boolean isOnline() {
@@ -235,6 +293,7 @@ public class DetailActivityFragment extends Fragment implements TrailersAdapter.
         if (isOnline()) {
             fetchTrailersTask = new FetchTrailersTask(mTrailerAdapter, getActivity());
             fetchTrailersTask.execute(mMovieId);
+            //restoreScrollPosition();
         } else {
             CharSequence text = "Unable to load, due to unavailability in network.";
             Toast.makeText(getActivity().getApplicationContext(), text, Toast.LENGTH_SHORT).show();
@@ -245,6 +304,7 @@ public class DetailActivityFragment extends Fragment implements TrailersAdapter.
         if (isOnline()) {
             fetchReviewsTask = new FetchReviewsTask(mReviewAdapter, getActivity());
             fetchReviewsTask.execute(mMovieId);
+            //restoreScrollPosition();
         } else {
             CharSequence text = "Unable to load, due to unavailability in network.";
             Toast.makeText(getActivity().getApplicationContext(), text, Toast.LENGTH_SHORT).show();

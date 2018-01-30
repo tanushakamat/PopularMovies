@@ -32,7 +32,7 @@ import java.util.ArrayList;
  */
 public class MovieFragment extends Fragment implements CustomMovieAdapter.ListItemClickListener, LoaderManager.LoaderCallbacks<Cursor> {
 
-    final static String LOG_TAG = MovieFragment.class.getSimpleName();
+    final String LOG_TAG = MovieFragment.class.getSimpleName();
 
     private CustomMovieAdapter mMovieAdapter;
     private FetchMoviesTask fetchMoviesTask;
@@ -163,6 +163,13 @@ public class MovieFragment extends Fragment implements CustomMovieAdapter.ListIt
         mMovieAdapter = new CustomMovieAdapter(this, new ArrayList<String>());
         mMoviesRecyclerView.setAdapter(mMovieAdapter);
 
+ /*       mMoviesRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                restoreRecyclerViewState();
+            }
+        });*/
+
         String sortingOrder = PreferenceManager.getDefaultSharedPreferences(getContext()).getString(getContext().getString(R.string.key_sort_order), "popular");
         if (sortingOrder.equals("popular") || sortingOrder.equals("top_rated")) {
             updateMovies();
@@ -170,28 +177,11 @@ public class MovieFragment extends Fragment implements CustomMovieAdapter.ListIt
             Bundle args = this.getArguments();
             getLoaderManager().initLoader(CURSOR_LOADER_ID, args, this);
         }
-
-
-
-
         return rootView;
     }
 
-    public static void recyclerViewScrollToPosition() {
-        RecyclerView.LayoutManager layoutManager = mMoviesRecyclerView.getLayoutManager();
-        if (layoutManager != null) {
-            Log.v(LOG_TAG, "reached inside gridLayoutManager if, mScrollPosition = " + mScrollPosition + "RecyclerView.NO_POSITION = " + RecyclerView.NO_POSITION);
 
-            int count = layoutManager.getChildCount();
-            if (mScrollPosition != RecyclerView.NO_POSITION /*&& mScrollPosition < count*/) {
-                Log.v(LOG_TAG, "reached inside mScrollPosition if, mScrollPosition = " + mScrollPosition);
-                layoutManager.smoothScrollToPosition(mMoviesRecyclerView, null, mScrollPosition);
-            }
-        }
-    }
-
-    public static void restoreRecyclerViewState()
-    {
+    public static void restoreRecyclerViewState() {
         if (layoutManagerSavedState != null) {
             mMoviesRecyclerView.getLayoutManager().onRestoreInstanceState(layoutManagerSavedState);
         }
@@ -214,8 +204,7 @@ public class MovieFragment extends Fragment implements CustomMovieAdapter.ListIt
                 Bundle args = this.getArguments();
                 getLoaderManager().restartLoader(CURSOR_LOADER_ID, args, this);
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -260,16 +249,16 @@ public class MovieFragment extends Fragment implements CustomMovieAdapter.ListIt
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         String movieID;
         mCursor = data;
-        Log.v(LOG_TAG, "mCursor.getCount() = " + mCursor.getCount() );
-            mCursor.moveToFirst();
-            favouriteMovieIds.clear();
-            while (!mCursor.isAfterLast()) {
-                movieID = mCursor.getString(1);
-                Log.v(LOG_TAG, movieID);
-                favouriteMovieIds.add(movieID);
-                mCursor.moveToNext();
-            }
-            updateMovies();
+        Log.v(LOG_TAG, "mCursor.getCount() = " + mCursor.getCount());
+        mCursor.moveToFirst();
+        favouriteMovieIds.clear();
+        while (!mCursor.isAfterLast()) {
+            movieID = mCursor.getString(1);
+            Log.v(LOG_TAG, movieID);
+            favouriteMovieIds.add(movieID);
+            mCursor.moveToNext();
+        }
+        updateMovies();
     }
 
     @Override
